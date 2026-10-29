@@ -1,24 +1,90 @@
 (() => {
-  const existing = globalThis.NovaUI;
-  if (existing && typeof existing.destroy === "function") {
-    existing.destroy();
+  const previous = globalThis.NovaUI;
+  if (previous && typeof previous.destroy === "function") {
+    previous.destroy();
   }
 
   const windows = new Set();
 
+  const THEMES = {
+    Purple: {
+      bg: "#111018",
+      header: "#211a30",
+      accent: "#7c3aed",
+      border: "#443754",
+      text: "#f4f0ff",
+      muted: "#aaa2ba",
+      surface: "#191720"
+    },
+    Midnight: {
+      bg: "#0b1020",
+      header: "#151f38",
+      accent: "#3b82f6",
+      border: "#334155",
+      text: "#eff6ff",
+      muted: "#a8b7ce",
+      surface: "#111a2d"
+    },
+    Emerald: {
+      bg: "#081510",
+      header: "#123326",
+      accent: "#16a34a",
+      border: "#285541",
+      text: "#ecfdf5",
+      muted: "#a7c9b7",
+      surface: "#10241a"
+    },
+    Crimson: {
+      bg: "#180b0b",
+      header: "#351313",
+      accent: "#dc2626",
+      border: "#542626",
+      text: "#fff1f2",
+      muted: "#d7aaaa",
+      surface: "#241111"
+    },
+    Rose: {
+      bg: "#190e19",
+      header: "#3b1736",
+      accent: "#db2777",
+      border: "#653454",
+      text: "#fdf2f8",
+      muted: "#d7adc5",
+      surface: "#251625"
+    },
+    Light: {
+      bg: "#f5f5fa",
+      header: "#e5e7f5",
+      accent: "#6d4aff",
+      border: "#d1d5e5",
+      text: "#191827",
+      muted: "#5d6074",
+      surface: "#ffffff"
+    }
+  };
+
+  const BASE_THEME = { ...THEMES.Purple };
+
   const css = `
     .nova-root {
+      --nova-bg: #111018;
+      --nova-header: #211a30;
+      --nova-accent: #7c3aed;
+      --nova-border: #443754;
+      --nova-text: #f4f0ff;
+      --nova-muted: #aaa2ba;
+      --nova-surface: #191720;
       position: fixed;
       top: 80px;
       left: 80px;
-      width: 360px;
+      width: 370px;
       max-width: calc(100vw - 24px);
       max-height: calc(100vh - 24px);
       overflow: auto;
-      background: #111018;
-      color: #f4f0ff;
+      background: var(--nova-bg);
+      color: var(--nova-text);
       font: 14px Arial, sans-serif;
-      border: 1px solid #8b5cf6;
+      border: 1px solid var(--nova-accent);
       border-radius: 12px;
       z-index: 2147483647;
       box-shadow: 0 12px 45px #0009;
@@ -27,9 +93,10 @@
     .nova-header {
       position: sticky;
       top: 0;
+      z-index: 2;
       padding: 14px;
-      background: #211a30;
-      color: #c4b5fd;
+      background: var(--nova-header);
+      color: var(--nova-text);
       font-weight: bold;
       cursor: move;
       user-select: none;
@@ -37,17 +104,27 @@
       justify-content: space-between;
       align-items: center;
     }
+    .nova-root button,
+    .nova-root input,
+    .nova-root select {
+      font: inherit;
+    }
     .nova-root button {
       cursor: pointer;
-      color: #eee7ff;
-      background: #252031;
-      border: 1px solid #443754;
+      color: var(--nova-text);
+      background: var(--nova-surface);
+      border: 1px solid var(--nova-border);
       border-radius: 7px;
       padding: 8px 10px;
     }
-    .nova-root button:hover { border-color: #a78bfa; }
+    .nova-root button:hover {
+      border-color: var(--nova-accent);
+    }
     .nova-root button.active,
-    .nova-root button.nova-on { background: #7c3aed; }
+    .nova-root button.nova-on {
+      background: var(--nova-accent);
+      color: #fff;
+    }
     .nova-tabs {
       display: flex;
       gap: 6px;
@@ -57,11 +134,11 @@
     .nova-content { padding-bottom: 8px; }
     .nova-page { padding: 12px; }
     .nova-section {
-      color: #a78bfa;
+      color: var(--nova-accent);
       font-size: 11px;
       font-weight: bold;
       letter-spacing: 1.5px;
-      margin: 10px 0;
+      margin: 12px 0;
     }
     .nova-item {
       display: flex;
@@ -70,43 +147,71 @@
       gap: 12px;
       padding: 12px;
       margin-bottom: 8px;
-      background: #191720;
-      border: 1px solid #30283b;
+      background: var(--nova-surface);
+      border: 1px solid var(--nova-border);
       border-radius: 8px;
     }
-    .nova-info { min-width: 0; overflow-wrap: anywhere; }
+    .nova-info {
+      min-width: 0;
+      flex: 1;
+      overflow-wrap: anywhere;
+    }
     .nova-info small {
       display: block;
-      color: #aaa2ba;
+      color: var(--nova-muted);
       margin-top: 5px;
     }
     .nova-label {
       padding: 8px 2px;
-      color: #f4f0ff;
+      color: var(--nova-text);
       overflow-wrap: anywhere;
     }
     .nova-paragraph-content {
-      color: #c8c1d5;
+      color: var(--nova-muted);
       margin-top: 6px;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
     .nova-root input,
     .nova-root select {
-      max-width: 150px;
+      max-width: 155px;
       min-width: 0;
-      color: #f4f0ff;
-      background: #252031;
-      border: 1px solid #443754;
+      color: var(--nova-text);
+      background: var(--nova-bg);
+      border: 1px solid var(--nova-border);
       border-radius: 6px;
       padding: 8px;
     }
-    .nova-root input[type="range"] { padding: 0; }
-    .nova-root button:focus-visible,
-    .nova-root input:focus-visible,
-    .nova-root select:focus-visible {
-      outline: 2px solid #a78bfa;
-      outline-offset: 2px;
+    .nova-root input[type="range"] {
+      width: 110px;
+      padding: 0;
+      accent-color: var(--nova-accent);
+    }
+    .nova-root input[type="color"] {
+      width: 48px;
+      height: 34px;
+      padding: 2px;
+    }
+    .nova-theme-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+    }
+    .nova-theme-controls label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      color: var(--nova-muted);
+      font-size: 12px;
+    }
+    .nova-theme-controls input,
+    .nova-theme-controls select {
+      max-width: 100%;
+      width: 100%;
+    }
+    .nova-theme-controls .nova-wide {
+      grid-column: 1 / -1;
     }
   `;
 
@@ -114,35 +219,75 @@
   if (!style) {
     style = document.createElement("style");
     style.id = "nova-ui-styles";
-    style.textContent = css;
     document.head.appendChild(style);
-  } else {
-    style.textContent = css;
+  }
+  style.textContent = css;
+
+  function normalizeTheme(theme) {
+    const result = { ...BASE_THEME };
+    if (!theme || typeof theme !== "object") return result;
+
+    for (const key of Object.keys(result)) {
+      if (typeof theme[key] === "string" &&
+          /^#[0-9a-fA-F]{6}$/.test(theme[key])) {
+        result[key] = theme[key];
+      }
+    }
+    return result;
   }
 
   function createWindow(options = {}) {
     const root = document.createElement("div");
     root.className = "nova-root";
-    root.innerHTML = `
-      <div class="nova-header">
-        <span class="nova-title"></span>
-        <button type="button" class="nova-close" aria-label="Close window">×</button>
-      </div>
-      <div class="nova-tabs"></div>
-      <div class="nova-content"></div>
-    `;
 
-    root.querySelector(".nova-title").textContent =
-      "✦ " + (options.name || "NOVA");
+    const header = document.createElement("div");
+    header.className = "nova-header";
 
+    const title = document.createElement("span");
+    title.textContent = "✦ " + (options.name || "NOVA");
+
+    const close = document.createElement("button");
+    close.type = "button";
+    close.textContent = "×";
+    close.setAttribute("aria-label", "Close window");
+
+    header.append(title, close);
+
+    const tabsBar = document.createElement("div");
+    tabsBar.className = "nova-tabs";
+
+    const content = document.createElement("div");
+    content.className = "nova-content";
+
+    root.append(header, tabsBar, content);
     document.body.appendChild(root);
 
-    const header = root.querySelector(".nova-header");
-    const tabsBar = root.querySelector(".nova-tabs");
-    const content = root.querySelector(".nova-content");
     const tabs = [];
     let destroyed = false;
     let drag = null;
+    let currentTheme = normalizeTheme(options.theme);
+
+    function setTheme(theme) {
+      currentTheme = normalizeTheme(theme);
+      const cssNames = {
+        bg: "--nova-bg",
+        header: "--nova-header",
+        accent: "--nova-accent",
+        border: "--nova-border",
+        text: "--nova-text",
+        muted: "--nova-muted",
+        surface: "--nova-surface"
+      };
+
+      for (const [key, variable] of Object.entries(cssNames)) {
+        root.style.setProperty(variable, currentTheme[key]);
+      }
+      return { ...currentTheme };
+    }
+
+    function getTheme() {
+      return { ...currentTheme };
+    }
 
     function destroy() {
       if (destroyed) return;
@@ -151,12 +296,11 @@
       windows.delete(api);
 
       if (windows.size === 0) {
-        const currentStyle = document.getElementById("nova-ui-styles");
-        if (currentStyle) currentStyle.remove();
+        document.getElementById("nova-ui-styles")?.remove();
       }
     }
 
-    root.querySelector(".nova-close").addEventListener("click", destroy);
+    close.addEventListener("click", destroy);
 
     header.addEventListener("pointerdown", event => {
       if (event.target.closest("button")) return;
@@ -171,16 +315,37 @@
       if (!drag || destroyed) return;
       const maxX = Math.max(0, innerWidth - root.offsetWidth);
       const maxY = Math.max(0, innerHeight - root.offsetHeight);
-      root.style.left = Math.max(
-        0, Math.min(maxX, event.clientX - drag.x)
-      ) + "px";
-      root.style.top = Math.max(
-        0, Math.min(maxY, event.clientY - drag.y)
-      ) + "px";
+
+      root.style.left =
+        Math.max(0, Math.min(maxX, event.clientX - drag.x)) + "px";
+      root.style.top =
+        Math.max(0, Math.min(maxY, event.clientY - drag.y)) + "px";
     });
 
     header.addEventListener("pointerup", () => drag = null);
     header.addEventListener("pointercancel", () => drag = null);
+
+    function makeRow(page, name, description) {
+      const row = document.createElement("div");
+      row.className = "nova-item";
+
+      const info = document.createElement("div");
+      info.className = "nova-info";
+
+      const heading = document.createElement("strong");
+      heading.textContent = name;
+      info.appendChild(heading);
+
+      if (description) {
+        const desc = document.createElement("small");
+        desc.textContent = description;
+        info.appendChild(desc);
+      }
+
+      row.appendChild(info);
+      page.appendChild(row);
+      return row;
+    }
 
     function createTab(name = "Tab") {
       const tabButton = document.createElement("button");
@@ -207,44 +372,59 @@
           tabButton.classList.add("active");
         },
 
+        remove() {
+          const index = tabs.indexOf(tab);
+          if (index === -1) return;
+
+          const wasSelected = !page.hidden;
+          page.remove();
+          tabButton.remove();
+          tabs.splice(index, 1);
+
+          if (wasSelected && tabs.length) tabs[0].select();
+        },
+
         createSection(name = "Section") {
-          const section = document.createElement("div");
-          section.className = "nova-section";
-          section.textContent = String(name).toUpperCase();
-          page.appendChild(section);
-          return section;
+          const element = document.createElement("div");
+          element.className = "nova-section";
+          element.textContent = String(name).toUpperCase();
+          page.appendChild(element);
+          return element;
         },
 
         createLabel(text = "") {
-          const label = document.createElement("div");
-          label.className = "nova-label";
-          label.textContent = text;
-          page.appendChild(label);
-          return label;
+          const element = document.createElement("div");
+          element.className = "nova-label";
+          element.textContent = String(text);
+          page.appendChild(element);
+          return element;
         },
 
         createParagraph(options = {}) {
           const row = document.createElement("div");
           row.className = "nova-item";
+
           const info = document.createElement("div");
           info.className = "nova-info";
 
-          const title = document.createElement("strong");
-          title.textContent = options.name || "Information";
+          const heading = document.createElement("strong");
+          heading.textContent = options.name || "Information";
 
           const paragraph = document.createElement("div");
           paragraph.className = "nova-paragraph-content";
           paragraph.textContent = options.content || "";
 
-          info.append(title, paragraph);
+          info.append(heading, paragraph);
           row.appendChild(info);
           page.appendChild(row);
+
           return row;
         },
 
         createButton(options = {}) {
-          const row = makeRow(page, options.name || "Button",
-            options.description);
+          const row = makeRow(
+            page, options.name || "Button", options.description
+          );
           const button = document.createElement("button");
           button.type = "button";
           button.textContent = options.text || "RUN";
@@ -260,14 +440,15 @@
             element: row,
             control: button,
             remove: () => row.remove(),
-            setText: text => button.textContent = text,
+            setText: text => button.textContent = String(text),
             getText: () => button.textContent
           };
         },
 
         createToggle(options = {}) {
-          const row = makeRow(page, options.name || "Toggle",
-            options.description);
+          const row = makeRow(
+            page, options.name || "Toggle", options.description
+          );
           const button = document.createElement("button");
           button.type = "button";
           row.appendChild(button);
@@ -302,17 +483,20 @@
         },
 
         createInput(options = {}) {
-          const row = makeRow(page, options.name || "Input",
-            options.description);
+          const row = makeRow(
+            page, options.name || "Input", options.description
+          );
           const input = document.createElement("input");
           input.type = "text";
           input.placeholder = options.placeholder || "";
           input.value = options.default ?? "";
+
           input.addEventListener("input", () => {
             if (typeof options.callback === "function") {
               options.callback(input.value);
             }
           });
+
           row.appendChild(input);
 
           return {
@@ -330,8 +514,9 @@
         },
 
         createSlider(options = {}) {
-          const row = makeRow(page, options.name || "Slider",
-            options.description);
+          const row = makeRow(
+            page, options.name || "Slider", options.description
+          );
           const slider = document.createElement("input");
           slider.type = "range";
           slider.min = options.min ?? 0;
@@ -340,7 +525,6 @@
           slider.value = options.default ?? slider.min;
 
           const valueText = document.createElement("span");
-          valueText.textContent = slider.value;
 
           function update(notify = true) {
             valueText.textContent = slider.value;
@@ -366,20 +550,19 @@
         },
 
         createDropdown(options = {}) {
-          const row = makeRow(page, options.name || "Dropdown",
-            options.description);
+          const row = makeRow(
+            page, options.name || "Dropdown", options.description
+          );
           const select = document.createElement("select");
 
-          (options.options || []).forEach(option => {
-            const item = document.createElement("option");
-            item.value = option;
-            item.textContent = option;
-            select.appendChild(item);
+          (options.options || []).forEach(value => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = value;
+            select.appendChild(option);
           });
 
-          if (options.default != null) {
-            select.value = options.default;
-          }
+          if (options.default != null) select.value = options.default;
 
           select.addEventListener("change", () => {
             if (typeof options.callback === "function") {
@@ -403,15 +586,121 @@
           };
         },
 
-        remove() {
-          page.remove();
-          tabButton.remove();
-          const index = tabs.indexOf(tab);
-          if (index !== -1) tabs.splice(index, 1);
+        createThemePicker(options = {}) {
+          const row = makeRow(
+            page, options.name || "Theme", options.description
+          );
 
-          if (tabs.length > 0 && !tabs.some(item => !item.page.hidden)) {
-            tabs[0].select();
+          const controls = document.createElement("div");
+          controls.className = "nova-theme-controls";
+
+          const presetLabel = document.createElement("label");
+          presetLabel.textContent = "Theme template";
+
+          const preset = document.createElement("select");
+          Object.keys(THEMES).forEach(name => {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            preset.appendChild(option);
+          });
+          presetLabel.appendChild(preset);
+          controls.appendChild(presetLabel);
+
+          const fields = [
+            ["bg", "Background"],
+            ["header", "Header"],
+            ["accent", "Accent"],
+            ["border", "Border"],
+            ["text", "Text"],
+            ["muted", "Muted text"],
+            ["surface", "Element background"]
+          ];
+
+          const colorInputs = {};
+
+          fields.forEach(([key, labelText]) => {
+            const label = document.createElement("label");
+            label.textContent = labelText;
+
+            const input = document.createElement("input");
+            input.type = "color";
+            input.value = currentTheme[key];
+            colorInputs[key] = input;
+            label.appendChild(input);
+            controls.appendChild(label);
+          });
+
+          const applyButton = document.createElement("button");
+          applyButton.type = "button";
+          applyButton.textContent = "Apply custom theme";
+          applyButton.className = "nova-wide";
+          controls.appendChild(applyButton);
+
+          const resetButton = document.createElement("button");
+          resetButton.type = "button";
+          resetButton.textContent = "Reset to template";
+          resetButton.className = "nova-wide";
+          controls.appendChild(resetButton);
+
+          row.appendChild(controls);
+
+          function syncColors(theme) {
+            const clean = normalizeTheme(theme);
+            fields.forEach(([key]) => {
+              colorInputs[key].value = clean[key];
+            });
           }
+
+          function apply(theme) {
+            const clean = setTheme(theme);
+            syncColors(clean);
+
+            if (typeof options.callback === "function") {
+              options.callback({ ...clean });
+            }
+            return clean;
+          }
+
+          preset.addEventListener("change", () => {
+            const selected = THEMES[preset.value];
+            if (selected) apply(selected);
+          });
+
+          applyButton.addEventListener("click", () => {
+            const custom = {};
+            fields.forEach(([key]) => {
+              custom[key] = colorInputs[key].value;
+            });
+            apply(custom);
+          });
+
+          resetButton.addEventListener("click", () => {
+            const selected = THEMES[preset.value] || THEMES.Purple;
+            syncColors(selected);
+            apply(selected);
+          });
+
+          const initialName = options.default || "Purple";
+          if (THEMES[initialName]) {
+            preset.value = initialName;
+            apply(THEMES[initialName]);
+          } else {
+            preset.value = "Purple";
+            syncColors(currentTheme);
+          }
+
+          return {
+            element: row,
+            remove: () => row.remove(),
+            getValue: () => getTheme(),
+            setValue: apply,
+            getTemplates: () =>
+              Object.keys(THEMES).reduce((copy, name) => {
+                copy[name] = { ...THEMES[name] };
+                return copy;
+              }, {})
+          };
         }
       };
 
@@ -422,45 +711,36 @@
       return tab;
     }
 
-    function makeRow(page, name, description) {
-      const row = document.createElement("div");
-      row.className = "nova-item";
-
-      const info = document.createElement("div");
-      info.className = "nova-info";
-
-      const title = document.createElement("strong");
-      title.textContent = name;
-      info.appendChild(title);
-
-      if (description) {
-        const desc = document.createElement("small");
-        desc.textContent = description;
-        info.appendChild(desc);
-      }
-
-      row.appendChild(info);
-      page.appendChild(row);
-      return row;
-    }
-
     const api = {
       root,
       createTab,
       destroy,
-      remove: destroy
+      remove: destroy,
+      setTheme,
+      getTheme,
+      getThemes: () =>
+        Object.keys(THEMES).reduce((copy, name) => {
+          copy[name] = { ...THEMES[name] };
+          return copy;
+        }, {})
     };
 
+    setTheme(currentTheme);
     windows.add(api);
     return api;
   }
 
   globalThis.NovaUI = {
     createWindow,
+    themes: Object.keys(THEMES),
+    getThemes: () =>
+      Object.keys(THEMES).reduce((copy, name) => {
+        copy[name] = { ...THEMES[name] };
+        return copy;
+      }, {}),
     destroy() {
       [...windows].forEach(window => window.destroy());
-      const currentStyle = document.getElementById("nova-ui-styles");
-      if (currentStyle) currentStyle.remove();
+      document.getElementById("nova-ui-styles")?.remove();
       delete globalThis.NovaUI;
     }
   };
